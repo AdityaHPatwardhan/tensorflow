@@ -28,7 +28,7 @@ limitations under the License.
 
 using namespace std;
 
-bool stop_person_detection = false;
+bool camera_web_server_turned_on = false;
 camera_fb_t *fb = NULL;
 static const char *TAG = "app_camera";
 
@@ -36,17 +36,16 @@ static const char *TAG = "app_camera";
 TfLiteStatus InitCamera(tflite::ErrorReporter* error_reporter) {
 
   int ret = app_camera_init();
- 
   if (ret != 0) {
     error_reporter->Report("Camera init failed");
     return kTfLiteError;
   }
      sensor_t * s = esp_camera_sensor_get();
-     framesize_t frame_size = FRAMESIZE_96x96;
+     framesize_t frame_size = FRAMESIZE_96X96;
     if (s->set_framesize(s, frame_size) != 0) {
         ESP_LOGE(TAG, "Failed to set frame size");
     }
-  cout << " sensor framesize is " << s->status.framesize << endl;
+  //cout << " sensor framesize is " << s->status.framesize << endl;
   error_reporter->Report("Camera Initialized");
   return kTfLiteOk;
 }
@@ -69,7 +68,7 @@ TfLiteStatus PerformCapture(tflite::ErrorReporter* error_reporter, uint8_t *imag
 	    return kTfLiteError;
 	}
   error_reporter->Report("Image Captured");
-  memcpy(image_data, fb->buf, fb->len);
+  memcpy(image_data, fb->buf, 9216);
   esp_camera_fb_return(fb);
   /* here the esp camera can give you grayscale image directly */
   return kTfLiteOk;
@@ -87,10 +86,10 @@ TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
     }
     g_is_camera_initialized = true;
   }
-  if(stop_person_detection) {
-    cout << " stopping person detection " << endl;
+  if(camera_web_server_turned_on) {
+    cout << " camera web server turned on " << endl;
   }
-  while(stop_person_detection){
+  while(camera_web_server_turned_on){
   }
   /* Camera Captures Image of size 96 x 96  which is of the format grayscale thus, no need to crop or process further , directly send it to tf */
   TfLiteStatus capture_status = PerformCapture(error_reporter, image_data);

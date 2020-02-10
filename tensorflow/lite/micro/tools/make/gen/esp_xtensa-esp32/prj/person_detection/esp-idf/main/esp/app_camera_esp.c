@@ -61,7 +61,7 @@ int app_camera_init()
     config.pin_reset = -1;//RESET_GPIO_NUM;
     config.xclk_freq_hz = XCLK_FREQ;
     config.pixel_format = CAMERA_PIXEL_FORMAT;
-    config.frame_size = FRAMESIZE_UXGA;
+    config.frame_size = FRAMESIZE_VGA;
     config.jpeg_quality = 10;
     config.fb_count = 1;
 

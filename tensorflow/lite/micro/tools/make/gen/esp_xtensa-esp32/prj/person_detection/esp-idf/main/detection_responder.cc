@@ -18,8 +18,11 @@ limitations under the License.
 #include "app_wifi.h"
 #include "app_httpd.h"
 #include "iostream"
+
+#define CAMERA_WEB_SERVER
+
 using namespace std;
-extern bool stop_person_detection;
+extern bool camera_web_server_turned_on;
 // This dummy implementation writes person and no person scores to the error
 // console. Real applications will want to take some custom action instead, and
 // should implement their own versions of this function.
@@ -34,11 +37,15 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
                         uint8_t person_score, uint8_t no_person_score) {
   error_reporter->Report("person score:%d no person score %d", person_score,
                          no_person_score);
-  if(person_score > 230) {
-    cout << "person detected starting a server at http://192.168.0.4/" << endl;
-    esp_app_main();
-    stop_person_detection = true;
-  }
+        error_reporter->Report("Result : %s \n", (person_score > 230) ? "Person Detected" : "No Person Detected");
+#ifdef CAMERA_WEB_SERVER 
+    if(person_score > 230) {
+        cout << "Person detected starting a server at http://192.168.0.4/" << endl;
+        esp_app_main();
+        camera_web_server_turned_on = true;
+    }
+#endif
+
 }
 
 

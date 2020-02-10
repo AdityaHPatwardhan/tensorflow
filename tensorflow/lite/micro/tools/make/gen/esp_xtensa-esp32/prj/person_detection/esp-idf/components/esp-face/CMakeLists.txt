@@ -22,7 +22,7 @@ SRCS ${COMPONENT_SRCS}
 INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
 REQUIRES ${COMPONENT_REQUIRES}
 )
-
+target_compile_options(${COMPONENT_LIB} INTERFACE -Wno-cpp -Wno-ncompatible-pointer-types)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
 message("current soruce dir path is" ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${COMPONENT_LIB} INTERFACE dl_lib fd fr od)

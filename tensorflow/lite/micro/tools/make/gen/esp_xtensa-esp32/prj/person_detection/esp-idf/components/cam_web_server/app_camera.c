@@ -115,9 +115,9 @@ void app_camera_main ()
         s->set_brightness(s, 1);//up the blightness just a bit
         s->set_saturation(s, -2);//lower the saturation
     }
-    if (s->id.PID == OV2640_PID) {
-        printf("\nit is OV2640 Indeed\n");
-    }
+//    if (s->id.PID == OV2640_PID) {
+//        printf("\nit is OV2640 Indeed\n");
+//    }
     //drop down frame size for higher initial frame rate
     s->set_framesize(s, FRAMESIZE_QVGA);
 }
