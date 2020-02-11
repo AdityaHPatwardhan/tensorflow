@@ -13,15 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "../main_functions.h"
-
-extern "C" void app_main(void) {
-  setup();
-  //while (true) {
-  //  loop();
-  //}
-  int count = 20;
-  while (count--) {
-    loop();
-  }
+#include <math.h>
+#include <stdio.h>
+#include "../output_handler.h"
+void HandleOutput(tflite::ErrorReporter* error_reporter, float x_value,
+                  float y_value) {
+  // Log the current X and Y values
+  printf("x_value: %0.4f, y_pred: %0.4f, y_orig: %0.4f\n", x_value, y_value, sin(x_value));
 }
