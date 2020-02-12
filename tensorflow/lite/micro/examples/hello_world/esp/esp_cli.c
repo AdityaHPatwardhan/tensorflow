@@ -32,6 +32,7 @@
 #include <driver/uart.h>
 
 #include "esp_main_functions.h"
+#include "esp_cli.h"
 
 static TaskHandle_t cli_task;
 static int stop;
@@ -56,7 +57,7 @@ static int task_dump_cli_handler(int argc, char *argv[])
                task_array[i].uxCurrentPriority,
                task_array[i].usStackHighWaterMark);
     }
-    esp_audio_mem_free(task_array);
+    free(task_array);
     return 0;
 }
 
@@ -70,7 +71,7 @@ static int cpu_dump_cli_handler(int argc, char *argv[])
     char *buf = calloc(1, 2 * 1024);
     vTaskGetRunTimeStats(buf);
     printf("%s: Run Time Stats:\n%s\n", TAG, buf);
-    esp_audio_mem_free(buf);
+    free(buf);
 #endif
     return 0;
 }
@@ -204,11 +205,11 @@ int esp_cli_init()
         return 0;
     }
 #define ESP_CLI_STACK_SIZE 7000
-    StackType_t *task_stack = (StackType_t *) calloc(1, ESP_CLI_STACK_SIZE);
-    static StaticTask_t task_buf;
-    cli_task = xTaskCreateStatic(esp_cli_task, "cli_task", ESP_CLI_STACK_SIZE, (void *) 0, 3, task_stack, &task_buf);
-    if (cli_task == NULL) {
-        ESP_LOGE(TAG, "Couldn't create thead");
+    //StackType_t *task_stack = (StackType_t *) calloc(1, ESP_CLI_STACK_SIZE);
+    //static StaticTask_t task_buf;
+    if(pdPASS != xTaskCreate(&esp_cli_task, "cli_task", ESP_CLI_STACK_SIZE, NULL, 4,NULL)) {
+        ESP_LOGE(TAG, "Couldn't create task");
+        return -1;
     }
     cli_started = 1;
     return 0;

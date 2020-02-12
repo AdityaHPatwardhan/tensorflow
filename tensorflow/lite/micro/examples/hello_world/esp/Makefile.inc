@@ -6,8 +6,8 @@ ESP_HELLO_WORLD_HDRS := \
 tensorflow/lite/micro/examples/hello_world/esp/esp_cli.h \
 tensorflow/lite/micro/examples/hello_world/esp/esp_main_functions.h
 
-hello_world_SRCS += $(ESP_HELLO_WORLD_SRCS)
-hello_world_HDRS += $(ESP_HELLO_WORLD_HDRS)
+HELLO_WORLD_SRCS += $(ESP_HELLO_WORLD_SRCS)
+HELLO_WORLD_HDRS += $(ESP_HELLO_WORLD_HDRS)
 MAIN_SRCS += $(ESP_HELLO_WORLD_SRCS)
 
 # ESP specific flags and files

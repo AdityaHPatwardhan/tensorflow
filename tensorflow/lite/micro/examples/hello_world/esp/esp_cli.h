@@ -23,5 +23,13 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int esp_cli_init();
 int esp_diag_register_cli();
+
+#ifdef __cplusplus
+}
+#endif

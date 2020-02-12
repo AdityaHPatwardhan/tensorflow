@@ -12,4 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void run_inference(float x_val);
+
+#ifdef __cplusplus
+}
+#endif
