@@ -1,9 +1,12 @@
 # Adding some esp specific files in the main CMakeLists.txt
 ESP_PERSON_DETECTION_SRCS := \
-tensorflow/lite/micro/examples/person_detection/esp/app_camera_esp.c
+tensorflow/lite/micro/examples/person_detection/esp/app_camera_esp.c \
+tensorflow/lite/micro/examples/person_detection/esp/esp_cli.c
 
 ESP_PERSON_DETECTION_HDRS := \
-tensorflow/lite/micro/examples/person_detection/esp/app_camera_esp.h
+tensorflow/lite/micro/examples/person_detection/esp/app_camera_esp.h \
+tensorflow/lite/micro/examples/person_detection/esp/esp_cli.h \
+tensorflow/lite/micro/examples/person_detection/esp/esp_main_functions.h
 
 person_detection_SRCS += $(ESP_PERSON_DETECTION_SRCS)
 person_detection_HDRS += $(ESP_PERSON_DETECTION_HDRS)
@@ -14,7 +17,10 @@ CCFLAGS += -Wno-nonnull
 CXXFLAGS += -Wno-return-type -Wno-strict-aliasing
 ESP_PROJECT_FILES += \
   sdkconfig.defaults \
-  main/Kconfig.projbuild
+  main/Kconfig.projbuild \
+  components/static_images/CMakeLists.txt \
+  components/static_images/sample_images/lena_image.jpg \
+  components/static_images/sample_images/vikram.jpg
 
 # Remap downloaded model files as if they were in tensorflow/lite/micro/examples/..
 MODEL_DOWNLOADS_DIR := tensorflow/lite/micro/tools/make/downloads/person_model_grayscale

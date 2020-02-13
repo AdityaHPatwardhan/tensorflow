@@ -18,13 +18,17 @@ limitations under the License.
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_log.h"
-
+#include "esp_cli.h"
 
 int tf_main(int argc, char* argv[]) {
   setup();
-  while (true) {
-    loop();
-  }
+  esp_cli_init();
+  esp_diag_register_cli();
+  vTaskDelay(portMAX_DELAY);
+  return 0;
+  //while (true) {
+  //  loop();
+  //}
 }
 
 extern "C" void app_main()
