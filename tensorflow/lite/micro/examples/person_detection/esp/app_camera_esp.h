@@ -1,3 +1,4 @@
+#if 0
 /*
   * ESPRESSIF MIT License
   *
@@ -182,5 +183,6 @@ int app_camera_init();
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif

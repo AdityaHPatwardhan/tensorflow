@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/lite/micro/examples/person_detection/detection_responder.h"
+//#include "smtp_client.h"
 
 // This dummy implementation writes person and no person scores to the error
 // console. Real applications will want to take some custom action instead, and
@@ -22,4 +23,10 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
                         uint8_t person_score, uint8_t no_person_score) {
   error_reporter->Report("person score:%d no person score %d", person_score,
                          no_person_score);
+//    if(person_score > 240 ) {
+//
+//        send_email();
+//
+//    }
+
 }

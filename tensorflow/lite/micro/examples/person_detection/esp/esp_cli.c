@@ -33,20 +33,22 @@
 
 #include "esp_main_functions.h"
 #include "esp_cli.h"
-
-static uint8_t *image_database[10];
-
-
-extern const uint8_t image0_start[]   asm("_binary_lena_image_jpg_start");
-extern const uint8_t image0_end[]     asm("_binary_lena_image_jpg_end");
-
-extern const uint8_t image1_start[]   asm("_binary_vikram_jpg_start");
-extern const uint8_t image1_end[]     asm("_binary_vikram_jpg_end");
+#include "esp_timer.h"
+#define IMAGE_COUNT 10
+static uint8_t *image_database[IMAGE_COUNT];
 
 
+extern const uint8_t image0_start[]   asm("_binary_image0_start");
+extern const uint8_t image1_start[]   asm("_binary_image1_start");
+extern const uint8_t image2_start[]   asm("_binary_image2_start");
+extern const uint8_t image3_start[]   asm("_binary_image3_start");
+extern const uint8_t image4_start[]   asm("_binary_image4_start");
+extern const uint8_t image5_start[]   asm("_binary_image5_start");
+extern const uint8_t image6_start[]   asm("_binary_image6_start");
+extern const uint8_t image7_start[]   asm("_binary_image7_start");
+extern const uint8_t image8_start[]   asm("_binary_image8_start");
+extern const uint8_t image9_start[]   asm("_binary_image9_start");
 
-
-static TaskHandle_t cli_task;
 static int stop;
 static const char *TAG = "[esp_cli]";
 
@@ -115,13 +117,18 @@ static int inference_cli_handler(int argc, char *argv[])
     }
     int image_number = atoi(argv[1]);
 
-    if((image_number < 0) | (image_number > 10)) {
-        ESP_LOGE(TAG, "Please Enter a valid Number");
+    if((image_number < 0) || (image_number >= IMAGE_COUNT)) {
+        ESP_LOGE(TAG, "Please Enter a valid Number ( 0 - %d)", IMAGE_COUNT-1);
         return -1;
     }
    // char file_name[30];
    // sprintf(file_name, "image%d.raw", image_number);
+    uint32_t detect_time;
+    detect_time = esp_timer_get_time();
     run_inference((void *)image_database[image_number]);
+    detect_time = (esp_timer_get_time() - detect_time)/1000;
+    ESP_LOGI(TAG,"Time required for the inference is %d ms", detect_time);
+
     return 0;
 }
 
@@ -144,7 +151,7 @@ static esp_console_cmd_t diag_cmds[] = {
     {
         .command = "detect_image",
         .help = "detect_image <image_number>"
-                "Note: image numbers ranging from 0 - 10 only are valid",
+                "Note: image numbers ranging from 0 - 9 only are valid",
         .func = inference_cli_handler,
     },
 };
@@ -219,10 +226,24 @@ int esp_diag_register_cli()
     return 0;
 }
 
-int esp_cli_init()
+static void image_database_init()
 {
     image_database[0] = (uint8_t *) image0_start;
     image_database[1] = (uint8_t *) image1_start;
+    image_database[2] = (uint8_t *) image2_start;
+    image_database[3] = (uint8_t *) image3_start;
+    image_database[4] = (uint8_t *) image4_start;
+    image_database[5] = (uint8_t *) image5_start;
+    image_database[6] = (uint8_t *) image6_start;
+    image_database[7] = (uint8_t *) image8_start;
+    image_database[8] = (uint8_t *) image8_start;
+    image_database[9] = (uint8_t *) image9_start;
+
+}
+
+int esp_cli_init()
+{
+    image_database_init();
     static int cli_started;
     if (cli_started) {
         return 0;

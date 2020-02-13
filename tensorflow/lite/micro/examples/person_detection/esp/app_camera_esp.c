@@ -1,3 +1,4 @@
+#if 0
 /* ESPRESSIF MIT License
  *
  * Copyright (c) 2018 <ESPRESSIF SYSTEMS (SHANGHAI) PTE LTD>
@@ -21,7 +22,7 @@
  */
 
 #include "app_camera_esp.h"
-
+#ifndef CONFIG_PERSON_DETECTION_STATIC
 static const char *TAG = "app_camera";
 
 int app_camera_init()
@@ -73,3 +74,5 @@ int app_camera_init()
     }
     return 0;
 }
+#endif /* CONFIG_PERSON_DETECTION_STATIC */
+#endif

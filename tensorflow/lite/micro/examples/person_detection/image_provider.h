@@ -33,7 +33,11 @@ limitations under the License.
 // The reference implementation can have no platform-specific dependencies, so
 // it just returns a static image. For real applications, you should
 // ensure there's a specialized implementation that accesses hardware APIs.
+#ifndef CONFIG_PERSON_DETECTION_STATIC
+
 TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
                       int image_height, int channels, uint8_t* image_data);
+
+#endif /* CONFIG_PERSON_DETECTION_STATIC */
 
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_IMAGE_PROVIDER_H_
