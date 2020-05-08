@@ -18,7 +18,7 @@ limitations under the License.
 #include "app_wifi.h"
 #include "app_httpd.h"
 #include "iostream"
-
+#include "smtp_client.h"
 #define CAMERA_WEB_SERVER
 
 using namespace std;
@@ -42,6 +42,7 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
     if(person_score > 230) {
         cout << "Person detected starting a server at http://192.168.0.4/" << endl;
         esp_app_main();
+        //send_email();
         camera_web_server_turned_on = true;
     }
 #endif
