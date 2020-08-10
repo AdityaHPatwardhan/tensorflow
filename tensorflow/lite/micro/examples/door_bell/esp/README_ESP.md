@@ -29,6 +29,7 @@ directory of the example with following commands.
  git clone https://github.com/espressif/esp32-camera.git components/esp32-camera
  cd components/esp32-camera/
  git checkout eacd640b8d379883bff1251a1005ebf3cf1ed95c
+ git clone https://github.com/vikramdattu/libjpeg-turbo
  cd ../../
 ```
 

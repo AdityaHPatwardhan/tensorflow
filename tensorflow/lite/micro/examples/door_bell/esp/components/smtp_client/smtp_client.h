@@ -26,7 +26,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void send_email();
+
+#include "esp_err.h"
+/**
+ * @brief      Performs email send operation.The parameters used in the process must have been already set with menuconfig (for e.g. sender, reciever etc.)
+ *
+ *
+ * @param[in]  email_data       pointer to the data that is to be sent as attachment
+ *
+ * @param[in]  email_data_size  size of the data
+ *
+ * @return
+ *            - ESP_OK          if mail send operation is successfull
+ *            - ESP_FAIL        if mail send operaion is failed
+ */
+esp_err_t smtp_client_send_email(uint8_t *email_data, int email_data_size);
 #ifdef __cplusplus
 }
 #endif

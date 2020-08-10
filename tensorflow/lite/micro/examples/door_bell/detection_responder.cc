@@ -15,15 +15,46 @@ limitations under the License.
 
 #include "tensorflow/lite/micro/examples/door_bell/detection_responder.h"
 #include "smtp_client.h"
+#include "esp_timer.h"
+#include "esp_camera.h"
+#include "esp_log.h"
+#include "cjpeg.h"
 
-// This dummy implementation writes person and no person scores to the error
-// console. Real applications will want to take some custom action instead, and
-// should implement their own versions of this function.
+/* min time (in ms) between two consecuting email notifications */
+#define HOLD_TIME 5000
+
+static int64_t elapsed_time = 0;
+uint8_t *jpeg_image;
+long unsigned int jpeg_img_size = 0;
+
+extern camera_fb_t* fb;
+
+static const char *TAG = "tf_responder";
+
 void RespondToDetection(tflite::ErrorReporter* error_reporter,
                         uint8_t person_score, uint8_t no_person_score) {
-  TF_LITE_REPORT_ERROR(error_reporter, "person score:%d no person score %d",
-                       person_score, no_person_score);
-  if(person_score > 240 ) {
-      send_email();
+
+  if (elapsed_time == 0) {
+    elapsed_time  = esp_timer_get_time();
+  }
+
+  if (person_score > 240) {
+    if (((esp_timer_get_time() - elapsed_time)/1000) >= HOLD_TIME) {
+
+      TF_LITE_REPORT_ERROR(error_reporter, "person detected");
+      TF_LITE_REPORT_ERROR(error_reporter, "fb width = %d, fb height = %d", fb->width, fb->height);
+      jpeg_img_size = fb->width * fb->height;
+      jpeg_image = (uint8_t *)malloc(sizeof(uint8_t)*jpeg_img_size);
+      if (jpeg_image == NULL) {
+        ESP_LOGE(TAG, "error in allocating memory");
+      }
+      encode_greyscale(fb->buf,jpeg_image, &jpeg_img_size, fb->width, fb->height);
+
+      esp_err_t esp_ret = smtp_client_send_email(jpeg_image, jpeg_img_size);
+      if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send email, returned %02X", esp_ret);
+      }
+      elapsed_time = 0;
+    }
   }
 }
