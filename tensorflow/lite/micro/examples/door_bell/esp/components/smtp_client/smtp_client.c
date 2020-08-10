@@ -22,8 +22,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -51,11 +49,10 @@
 
 #define SERVER_USES_STARTSSL 1
 
-static const char *TAG = "smtp_example";
+static const char *TAG = "smtp_client";
 
-#define TASK_STACK_SIZE     (8 * 1024)
 #define BUF_SIZE            512
-
+#define ERR_BUF_SIZE        100
 #define VALIDATE_MBEDTLS_RETURN(ret, min_valid_ret, max_valid_ret, goto_label)  \
     do {                                                                        \
         if (ret < min_valid_ret || ret > max_valid_ret) {                       \
@@ -78,8 +75,18 @@ static const char *TAG = "smtp_example";
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 
-extern const uint8_t esp_logo_png_start[] asm("_binary_esp_logo_png_start");
-extern const uint8_t esp_logo_png_end[]   asm("_binary_esp_logo_png_end");
+static bool smtp_client_wifi_init = false;
+static bool smtp_client_tls_conn_init = false;
+typedef struct smtp_client_handle {
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_context ssl;
+    mbedtls_x509_crt cacert;
+    mbedtls_ssl_config conf;
+    mbedtls_net_context server_fd;
+} smtp_client_mbedtls_handle_t;
+
+static smtp_client_mbedtls_handle_t *s_client = NULL;
 
 static int write_and_get_response(mbedtls_net_context *sock_fd, unsigned char *buf, size_t len)
 {
@@ -108,7 +115,7 @@ static int write_and_get_response(mbedtls_net_context *sock_fd, unsigned char *b
         }
 
         data[len] = '\0';
-        printf("\n%s", data);
+        //printf("\n%s", data);
         len = ret;
         for (i = 0; i < len; i++) {
             if (data[i] != '\n') {
@@ -218,7 +225,7 @@ static int perform_tls_handshake(mbedtls_ssl_context *ssl)
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Performing the SSL/TLS handshake...");
+    ESP_LOGD(TAG, "Performing the SSL/TLS handshake...");
 
     fflush(stdout);
     while ((ret = mbedtls_ssl_handshake(ssl)) != 0) {
@@ -228,7 +235,7 @@ static int perform_tls_handshake(mbedtls_ssl_context *ssl)
         }
     }
 
-    ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
+    ESP_LOGD(TAG, "Verifying peer X.509 certificate...");
 
     if ((flags = mbedtls_ssl_get_verify_result(ssl)) != 0) {
         /* In real life, we probably want to close connection if ret != 0 */
@@ -239,7 +246,7 @@ static int perform_tls_handshake(mbedtls_ssl_context *ssl)
         ESP_LOGI(TAG, "Certificate verified.");
     }
 
-    ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(ssl));
+    ESP_LOGD(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(ssl));
     ret = 0; /* No error */
 
 exit:
@@ -249,37 +256,41 @@ exit:
     return ret;
 }
 
-static void smtp_client_task(void *pvParameters)
+
+static void smtp_client_delete_mbedtls_conn(smtp_client_mbedtls_handle_t *client)
 {
-    char *buf = NULL;
-    unsigned char base64_buffer[128];
-    int ret, len;
-    size_t base64_len;
+    if (client == NULL) {
+        return;
+    }
+    mbedtls_net_free(&client->server_fd);
+    mbedtls_x509_crt_free(&client->cacert);
+    mbedtls_entropy_free(&client->entropy);
+    mbedtls_ssl_config_free(&client->conf);
+    mbedtls_ctr_drbg_free(&client->ctr_drbg);
+    mbedtls_ssl_free(&client->ssl);
+}
 
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_context ssl;
-    mbedtls_x509_crt cacert;
-    mbedtls_ssl_config conf;
-    mbedtls_net_context server_fd;
+static int smtp_client_init_mbedtls_conn(smtp_client_mbedtls_handle_t *client)
+{
+    assert(client != NULL);
+    int ret;
+    mbedtls_ssl_init(&client->ssl);
+    mbedtls_x509_crt_init(&client->cacert);
+    mbedtls_ctr_drbg_init(&client->ctr_drbg);
+    ESP_LOGD(TAG, "Seeding the random number generator");
 
-    mbedtls_ssl_init(&ssl);
-    mbedtls_x509_crt_init(&cacert);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    ESP_LOGI(TAG, "Seeding the random number generator");
+    mbedtls_ssl_config_init(&client->conf);
 
-    mbedtls_ssl_config_init(&conf);
-
-    mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+    mbedtls_entropy_init(&client->entropy);
+    if ((ret = mbedtls_ctr_drbg_seed(&client->ctr_drbg, mbedtls_entropy_func, &client->entropy,
                                      NULL, 0)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Loading the CA root certificate...");
+    ESP_LOGD(TAG, "Loading the CA root certificate...");
 
-    ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,
+    ret = mbedtls_x509_crt_parse(&client->cacert, server_root_cert_pem_start,
                                  server_root_cert_pem_end - server_root_cert_pem_start);
 
     if (ret < 0) {
@@ -287,17 +298,17 @@ static void smtp_client_task(void *pvParameters)
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Setting hostname for TLS session...");
+    ESP_LOGD(TAG, "Setting hostname for TLS session...");
 
     /* Hostname set here should match CN in server certificate */
-    if ((ret = mbedtls_ssl_set_hostname(&ssl, MAIL_SERVER)) != 0) {
+    if ((ret = mbedtls_ssl_set_hostname(&client->ssl, MAIL_SERVER)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
+    ESP_LOGD(TAG, "Setting up the SSL/TLS structure...");
 
-    if ((ret = mbedtls_ssl_config_defaults(&conf,
+    if ((ret = mbedtls_ssl_config_defaults(&client->conf,
                                            MBEDTLS_SSL_IS_CLIENT,
                                            MBEDTLS_SSL_TRANSPORT_STREAM,
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
@@ -305,23 +316,45 @@ static void smtp_client_task(void *pvParameters)
         goto exit;
     }
 
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-    mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+    mbedtls_ssl_conf_authmode(&client->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    mbedtls_ssl_conf_ca_chain(&client->conf, &client->cacert, NULL);
+    mbedtls_ssl_conf_rng(&client->conf, mbedtls_ctr_drbg_random, &client->ctr_drbg);
 #ifdef CONFIG_MBEDTLS_DEBUG
     mbedtls_esp_enable_debug_log(&conf, 4);
 #endif
 
-    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
+    if ((ret = mbedtls_ssl_setup(&client->ssl, &client->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
         goto exit;
     }
 
-    mbedtls_net_init(&server_fd);
+    mbedtls_net_init(&client->server_fd);
+
+    /* params completely initialized till this point */
+    smtp_client_tls_conn_init = true;
+    return ret;
+
+exit:
+    smtp_client_delete_mbedtls_conn(client);
+    return ret;
+}
+
+static int smtp_client_send_email_internal(uint8_t *email_data, int email_data_size, smtp_client_mbedtls_handle_t *client)
+{
+    assert(client != NULL);
+    int ret, len;
+    unsigned char base64_buffer[128];
+    size_t base64_len;
+    char *buf = NULL;
+
+    if (client == NULL) {
+        ESP_LOGE(TAG, "smtp_client_mbedtls_handle cannot be NULL");
+        goto exit;
+    }
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", MAIL_SERVER, MAIL_PORT);
 
-    if ((ret = mbedtls_net_connect(&server_fd, MAIL_SERVER,
+    if ((ret = mbedtls_net_connect(&client->server_fd, MAIL_SERVER,
                                    MAIL_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -0x%x", -ret);
         goto exit;
@@ -329,7 +362,7 @@ static void smtp_client_task(void *pvParameters)
 
     ESP_LOGI(TAG, "Connected.");
 
-    mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&client->ssl, &client->server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     buf = (char *) calloc(1, BUF_SIZE);
     if (buf == NULL) {
@@ -338,50 +371,50 @@ static void smtp_client_task(void *pvParameters)
     }
 #if SERVER_USES_STARTSSL
     /* Get response */
-    ret = write_and_get_response(&server_fd, (unsigned char *) buf, 0);
+    ret = write_and_get_response(&client->server_fd, (unsigned char *) buf, 0);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
-    ESP_LOGI(TAG, "Writing EHLO to server...");
+    ESP_LOGD(TAG, "Writing EHLO to server...");
     len = snprintf((char *) buf, BUF_SIZE, "EHLO %s\r\n", "ESP32");
-    ret = write_and_get_response(&server_fd, (unsigned char *) buf, len);
+    ret = write_and_get_response(&client->server_fd, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
-    ESP_LOGI(TAG, "Writing STARTTLS to server...");
+    ESP_LOGD(TAG, "Writing STARTTLS to server...");
     len = snprintf((char *) buf, BUF_SIZE, "STARTTLS\r\n");
-    ret = write_and_get_response(&server_fd, (unsigned char *) buf, len);
+    ret = write_and_get_response(&client->server_fd, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
-    ret = perform_tls_handshake(&ssl);
+    ret = perform_tls_handshake(&client->ssl);
     if (ret != 0) {
         goto exit;
     }
 
 #else /* SERVER_USES_STARTSSL */
-    ret = perform_tls_handshake(&ssl);
+    ret = perform_tls_handshake(&client->ssl);
     if (ret != 0) {
         goto exit;
     }
 
     /* Get response */
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, 0);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, 0);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
     ESP_LOGI(TAG, "Writing EHLO to server...");
 
     len = snprintf((char *) buf, BUF_SIZE, "EHLO %s\r\n", "ESP32");
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
 #endif /* SERVER_USES_STARTSSL */
 
     /* Authentication */
-    ESP_LOGI(TAG, "Authentication...");
+    ESP_LOGD(TAG, "Authentication...");
 
-    ESP_LOGI(TAG, "Write AUTH LOGIN");
+    ESP_LOGD(TAG, "Write AUTH LOGIN");
     len = snprintf( (char *) buf, BUF_SIZE, "AUTH LOGIN\r\n" );
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 399, exit);
 
-    ESP_LOGI(TAG, "Write USER NAME");
+    ESP_LOGD(TAG, "Write USER NAME");
     ret = mbedtls_base64_encode((unsigned char *) base64_buffer, sizeof(base64_buffer),
                                 &base64_len, (unsigned char *) SENDER_MAIL, strlen(SENDER_MAIL));
     if (ret != 0) {
@@ -389,10 +422,10 @@ static void smtp_client_task(void *pvParameters)
         goto exit;
     }
     len = snprintf((char *) buf, BUF_SIZE, "%s\r\n", base64_buffer);
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 300, 399, exit);
 
-    ESP_LOGI(TAG, "Write PASSWORD");
+    ESP_LOGD(TAG, "Write PASSWORD");
     ret = mbedtls_base64_encode((unsigned char *) base64_buffer, sizeof(base64_buffer),
                                 &base64_len, (unsigned char *) SENDER_PASSWORD, strlen(SENDER_PASSWORD));
     if (ret != 0) {
@@ -400,29 +433,29 @@ static void smtp_client_task(void *pvParameters)
         goto exit;
     }
     len = snprintf((char *) buf, BUF_SIZE, "%s\r\n", base64_buffer);
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 399, exit);
 
     /* Compose email */
-    ESP_LOGI(TAG, "Write MAIL FROM");
+    ESP_LOGD(TAG, "Write MAIL FROM");
     len = snprintf((char *) buf, BUF_SIZE, "MAIL FROM:<%s>\r\n", SENDER_MAIL);
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
-    ESP_LOGI(TAG, "Write RCPT");
+    ESP_LOGD(TAG, "Write RCPT");
     len = snprintf((char *) buf, BUF_SIZE, "RCPT TO:<%s>\r\n", RECIPIENT_MAIL);
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
 
-    ESP_LOGI(TAG, "Write DATA");
+    ESP_LOGD(TAG, "Write DATA");
     len = snprintf((char *) buf, BUF_SIZE, "DATA\r\n");
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 300, 399, exit);
 
-    ESP_LOGI(TAG, "Write Content");
+    ESP_LOGD(TAG, "Write Content");
     /* We do not take action if message sending is partly failed. */
     len = snprintf((char *) buf, BUF_SIZE,
-                   "From: %s\r\nSubject: mbed TLS Test mail\r\n"
+                   "From: %s\r\nSubject: Someone at your door\r\n"
                    "To: %s\r\n"
                    "MIME-Version: 1.0 (mime-construct 1.9)\n",
                    "ESP32 SMTP Client", RECIPIENT_MAIL);
@@ -431,83 +464,113 @@ static void smtp_client_task(void *pvParameters)
      * Note: We are not validating return for some ssl_writes.
      * If by chance, it's failed; at worst email will be incomplete!
      */
-    ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
 
     /* Multipart boundary */
     len = snprintf((char *) buf, BUF_SIZE,
                    "Content-Type: multipart/mixed;boundary=XYZabcd1234\n"
                    "--XYZabcd1234\n");
-    ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
 
     /* Text */
     len = snprintf((char *) buf, BUF_SIZE,
                    "Content-Type: text/plain\n"
-                   "This is a simple test mail from the SMTP client example.\r\n"
+                   "Hey there is someone at your door.\r\n"
                    "\r\n"
-                   "Enjoy!\n\n--XYZabcd1234\n");
-    ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
+                   "\n\n--XYZabcd1234\n");
+    ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
 
     /* Attachment */
-    len = snprintf((char *) buf, BUF_SIZE,
-                   "Content-Type: image/image/png;name=esp_logo.png\n"
-                   "Content-Transfer-Encoding: base64\n"
-                   "Content-Disposition:attachment;filename=\"esp_logo.png\"\n");
-    ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
+    if (email_data != NULL) {
 
-    /* Image contents... */
-    const uint8_t *offset = esp_logo_png_start;
-    while (offset < esp_logo_png_end - 1) {
-        int read_bytes = MIN(((sizeof (base64_buffer) - 1) / 4) * 3, esp_logo_png_end - offset - 1);
-        ret = mbedtls_base64_encode((unsigned char *) base64_buffer, sizeof(base64_buffer),
-                                    &base64_len, (unsigned char *) offset, read_bytes);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Error in mbedtls encode! ret = -0x%x", -ret);
-            goto exit;
+        len = snprintf((char *) buf, BUF_SIZE,
+                       "Content-Type: image/image/jpg;name=person_image.jpg\n"
+                       "Content-Transfer-Encoding: base64\n"
+                       "Content-Disposition:attachment;filename=\"person_image.jpg\"\n");
+        ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
+
+        /* Image contents... */
+        const uint8_t *offset = email_data;
+
+        while (offset < (email_data + email_data_size) - 1) {
+            int read_bytes = MIN(((sizeof (base64_buffer) - 1) / 4) * 3, (email_data + email_data_size) - offset - 1);
+            ret = mbedtls_base64_encode((unsigned char *) base64_buffer, sizeof(base64_buffer),
+                                        &base64_len, (unsigned char *) offset, read_bytes);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "Error in mbedtls encode! ret = -0x%x", -ret);
+                goto exit;
+            }
+            offset += read_bytes;
+            len = snprintf((char *) buf, BUF_SIZE, "%s\r\n", base64_buffer);
+            ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
         }
-        offset += read_bytes;
-        len = snprintf((char *) buf, BUF_SIZE, "%s\r\n", base64_buffer);
-        ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
+
+        len = snprintf((char *) buf, BUF_SIZE, "\n--XYZabcd1234\n");
+        ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
     }
-
-    len = snprintf((char *) buf, BUF_SIZE, "\n--XYZabcd1234\n");
-    ret = write_ssl_data(&ssl, (unsigned char *) buf, len);
-
     len = snprintf((char *) buf, BUF_SIZE, "\r\n.\r\n");
-    ret = write_ssl_and_get_response(&ssl, (unsigned char *) buf, len);
+    ret = write_ssl_and_get_response(&client->ssl, (unsigned char *) buf, len);
     VALIDATE_MBEDTLS_RETURN(ret, 200, 299, exit);
-    ESP_LOGI(TAG, "Email sent!");
+    ESP_LOGD(TAG, "Email sent!");
 
     /* Close connection */
-    mbedtls_ssl_close_notify(&ssl);
+    mbedtls_ssl_close_notify(&client->ssl);
     ret = 0; /* No errors */
 
 exit:
-    mbedtls_ssl_session_reset(&ssl);
-    mbedtls_net_free(&server_fd);
 
-    if (ret != 0) {
-        mbedtls_strerror(ret, buf, 100);
-        ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
+    if (client != NULL) {
+        mbedtls_ssl_session_reset(&client->ssl);
     }
 
     putchar('\n'); /* Just a new line */
     if (buf) {
         free(buf);
     }
-    vTaskDelete(NULL);
+    return ret;
 }
 
-void send_email(void)
+esp_err_t smtp_client_send_email(uint8_t *email_data, int email_data_size)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    int ret;
+    char err_buf[ERR_BUF_SIZE];
+    if (!smtp_client_wifi_init) {
+        ESP_ERROR_CHECK(nvs_flash_init());
+        ESP_ERROR_CHECK(esp_netif_init());
+        ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    /**
-     * This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-    xTaskCreate(&smtp_client_task, "smtp_client_task", TASK_STACK_SIZE, NULL, 5, NULL);
+        /**
+         * This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+         * Read "Establishing Wi-Fi or Ethernet Connection" section in
+         * examples/protocols/README.md for more information about this function.
+         */
+        ESP_ERROR_CHECK(example_connect());
+        smtp_client_wifi_init = true;
+    }
+
+    if (!smtp_client_tls_conn_init || s_client == NULL) {
+        s_client = (smtp_client_mbedtls_handle_t*)calloc(1,sizeof(smtp_client_mbedtls_handle_t));
+        if (s_client == NULL) {
+            ESP_LOGE(TAG, "Could not allocate memory for smtp_client_mbedtls_handle");
+            return ESP_ERR_NO_MEM;
+        }
+        ret = smtp_client_init_mbedtls_conn(s_client);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "Error in initializing mbedTLS params, returned %02x", ret);
+                mbedtls_strerror(ret, err_buf, ERR_BUF_SIZE);
+                ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, err_buf);
+                return ESP_FAIL;
+            }
+    }
+
+    ret = smtp_client_send_email_internal(email_data, email_data_size, s_client);
+    if (ret != 0 ) {
+        ESP_LOGE(TAG, "Error in sending email");
+        mbedtls_strerror(ret, err_buf, ERR_BUF_SIZE);
+        ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, err_buf);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Email sent successfully !");
+    return ESP_OK;
 }

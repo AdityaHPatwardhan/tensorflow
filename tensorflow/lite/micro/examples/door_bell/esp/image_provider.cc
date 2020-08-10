@@ -42,6 +42,11 @@ TfLiteStatus InitCamera(tflite::ErrorReporter* error_reporter) {
   return kTfLiteOk;
 }
 
+void* image_provider_get_camera_fb()
+{
+    return (void *)fb;
+}
+
 extern "C" int capture_image() {
   fb = esp_camera_fb_get();
   if (!fb) {

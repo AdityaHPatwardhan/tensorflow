@@ -36,4 +36,6 @@ limitations under the License.
 TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
                       int image_height, int channels, uint8_t* image_data);
 
+/* a getter function that returns the camera specific context in which the image is captured */
+void* image_provider_get_camera_fb();
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_IMAGE_PROVIDER_H_
