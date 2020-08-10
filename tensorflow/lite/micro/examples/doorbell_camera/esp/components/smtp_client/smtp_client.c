@@ -474,9 +474,9 @@ static int smtp_client_send_email_internal(uint8_t *email_data, int email_data_s
 
     /* Text */
     len = snprintf((char *) buf, BUF_SIZE,
-                   "Content-Type: text/plain\n"
+                   "Content-Type: text/plain\r\n\r\n"
                    "Hey there is someone at your door.\r\n"
-                   "\r\n"
+                   "\r\n\r\n"
                    "\n\n--XYZabcd1234\n");
     ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
 
@@ -486,7 +486,7 @@ static int smtp_client_send_email_internal(uint8_t *email_data, int email_data_s
         len = snprintf((char *) buf, BUF_SIZE,
                        "Content-Type: image/image/jpg;name=person_image.jpg\n"
                        "Content-Transfer-Encoding: base64\n"
-                       "Content-Disposition:attachment;filename=\"person_image.jpg\"\n");
+                       "Content-Disposition:attachment;filename=\"person_image.jpg\"\r\n\r\n");
         ret = write_ssl_data(&client->ssl, (unsigned char *) buf, len);
 
         /* Image contents... */
