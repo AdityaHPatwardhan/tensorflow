@@ -16,7 +16,7 @@ limitations under the License.
 // Automatically created from a TensorFlow Lite flatbuffer using a command like:
 // xxd -i person_detect.tflite > person_detect_model_data.cc
 
-#include "tensorflow/lite/micro/examples/door_bell/person_detect_model_data.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/person_detect_model_data.h"
 
 // We need to keep the data array aligned on some architectures.
 #ifdef __has_attribute

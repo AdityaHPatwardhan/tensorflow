@@ -13,14 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/image_provider.h"
+// This is a standard TensorFlow Lite model file that has been converted into a
+// C data array, so it can be easily compiled into a binary for devices that
+// don't have a file system. It was created using the command:
+// xxd -i person_detect.tflite > person_detect_model_data.cc
 
-#include "tensorflow/lite/micro/examples/door_bell/model_settings.h"
+#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_PERSON_DETECT_MODEL_DATA_H_
+#define TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_PERSON_DETECT_MODEL_DATA_H_
 
-TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
-                      int image_height, int channels, uint8_t* image_data) {
-  for (int i = 0; i < image_width * image_height * channels; ++i) {
-    image_data[i] = 0;
-  }
-  return kTfLiteOk;
-}
+extern const unsigned char g_person_detect_model_data[];
+extern const int g_person_detect_model_data_len;
+
+#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_PERSON_DETECT_MODEL_DATA_H_

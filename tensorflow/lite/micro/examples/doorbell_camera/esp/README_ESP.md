@@ -21,7 +21,7 @@ example`(below)
 
 ## Build the example
 
-As the `door_bell` example requires an external component `esp32-camera`
+As the `doorbell_camera` example requires an external component `esp32-camera`
 for functioning hence we will have to manually clone it in `components/`
 directory of the example with following commands.
 

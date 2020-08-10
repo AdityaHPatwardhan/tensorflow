@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_IMAGE_PROVIDER_H_
-#define TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_IMAGE_PROVIDER_H_
+#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_IMAGE_PROVIDER_H_
+#define TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_IMAGE_PROVIDER_H_
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
@@ -38,4 +38,4 @@ TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
 
 /* a getter function that returns the camera specific context in which the image is captured */
 void* image_provider_get_camera_fb();
-#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_IMAGE_PROVIDER_H_
+#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_IMAGE_PROVIDER_H_

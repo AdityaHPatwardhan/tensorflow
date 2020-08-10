@@ -13,32 +13,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/image_provider.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/detection_responder.h"
 
-#include <limits>
-
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/micro/examples/door_bell/model_settings.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/testing/micro_test.h"
+#include "tensorflow/lite/micro/testing/test_utils.h"
 
 TF_LITE_MICRO_TESTS_BEGIN
 
-TF_LITE_MICRO_TEST(TestImageProvider) {
+TF_LITE_MICRO_TEST(TestCallability) {
   tflite::MicroErrorReporter micro_error_reporter;
   tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
-  uint8_t image_data[kMaxImageSize];
-  TfLiteStatus get_status =
-      GetImage(error_reporter, kNumCols, kNumRows, kNumChannels, image_data);
-  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk, get_status);
-  TF_LITE_MICRO_EXPECT_NE(image_data, nullptr);
-
-  // Make sure we can read all of the returned memory locations.
-  uint32_t total = 0;
-  for (int i = 0; i < kMaxImageSize; ++i) {
-    total += image_data[i];
-  }
+  // This will have external side-effects (like printing to the debug console
+  // or lighting an LED) that are hard to observe, so the most we can do is
+  // make sure the call doesn't crash.
+  RespondToDetection(error_reporter, 100, 200);
+  RespondToDetection(error_reporter, 200, 100);
 }
 
 TF_LITE_MICRO_TESTS_END

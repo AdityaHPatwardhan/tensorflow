@@ -16,8 +16,8 @@ limitations under the License.
 // Provides an interface to take an action based on the output from the person
 // detection model.
 
-#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_DETECTION_RESPONDER_H_
-#define TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_DETECTION_RESPONDER_H_
+#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_DETECTION_RESPONDER_H_
+#define TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_DETECTION_RESPONDER_H_
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
@@ -31,4 +31,4 @@ limitations under the License.
 void RespondToDetection(tflite::ErrorReporter* error_reporter,
                         uint8_t person_score, uint8_t no_person_score);
 
-#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_DETECTION_RESPONDER_H_
+#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_DETECTION_RESPONDER_H_

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_ESP_APP_CAMERA_ESP_H_
-#define TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_ESP_APP_CAMERA_ESP_H_
+#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_ESP_APP_CAMERA_ESP_H_
+#define TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_ESP_APP_CAMERA_ESP_H_
 
 #include "sensor.h"
 #include "esp_camera.h"
@@ -177,4 +177,4 @@ int app_camera_init();
 }
 #endif
 
-#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_DOOR_BELL_ESP_APP_CAMERA_ESP_H_
+#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_doorbell_camera_ESP_APP_CAMERA_ESP_H_

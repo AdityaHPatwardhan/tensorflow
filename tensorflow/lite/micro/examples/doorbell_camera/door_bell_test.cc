@@ -14,10 +14,10 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/micro/examples/door_bell/model_settings.h"
-#include "tensorflow/lite/micro/examples/door_bell/no_person_image_data.h"
-#include "tensorflow/lite/micro/examples/door_bell/person_detect_model_data.h"
-#include "tensorflow/lite/micro/examples/door_bell/person_image_data.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/model_settings.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/no_person_image_data.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/person_detect_model_data.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/person_image_data.h"
 #include "tensorflow/lite/micro/kernels/micro_ops.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"

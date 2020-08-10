@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/main_functions.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/main_functions.h"
 
-#include "tensorflow/lite/micro/examples/door_bell/detection_responder.h"
-#include "tensorflow/lite/micro/examples/door_bell/image_provider.h"
-#include "tensorflow/lite/micro/examples/door_bell/model_settings.h"
-#include "tensorflow/lite/micro/examples/door_bell/person_detect_model_data.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/detection_responder.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/image_provider.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/model_settings.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/person_detect_model_data.h"
 #include "tensorflow/lite/micro/kernels/micro_ops.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"

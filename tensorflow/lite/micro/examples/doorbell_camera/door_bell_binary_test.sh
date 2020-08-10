@@ -22,7 +22,7 @@ OUTPUT_LOG_FILE=${TEST_TMPDIR}/output_log.txt
 
 # Needed for copybara compatibility.
 SCRIPT_BASE_DIR=/org_"tensor"flow
-${TEST_SRCDIR}${SCRIPT_BASE_DIR}/tensorflow/lite/micro/examples/door_bell/door_bell 2>&1 | head > ${OUTPUT_LOG_FILE}
+${TEST_SRCDIR}${SCRIPT_BASE_DIR}/tensorflow/lite/micro/examples/doorbell_camera/doorbell_camera 2>&1 | head > ${OUTPUT_LOG_FILE}
 
 if ! grep -q 'person score' ${OUTPUT_LOG_FILE}; then
   echo "ERROR: Expected logs not found in output '${OUTPUT_LOG_FILE}'"
@@ -30,4 +30,4 @@ if ! grep -q 'person score' ${OUTPUT_LOG_FILE}; then
 fi
 
 echo
-echo "SUCCESS: door_bell_binary_test PASSED"
+echo "SUCCESS: doorbell_camera_binary_test PASSED"

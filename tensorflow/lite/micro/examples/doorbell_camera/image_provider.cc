@@ -13,15 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/main_functions.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/image_provider.h"
 
-// This is the default main used on systems that have the standard C entry
-// point. Other devices (for example FreeRTOS or ESP32) that have different
-// requirements for entry code (like an app_main function) should specialize
-// this main.cc file in a target-specific subfolder.
-int main(int argc, char* argv[]) {
-  setup();
-  while (true) {
-    loop();
+#include "tensorflow/lite/micro/examples/doorbell_camera/model_settings.h"
+
+TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
+                      int image_height, int channels, uint8_t* image_data) {
+  for (int i = 0; i < image_width * image_height * channels; ++i) {
+    image_data[i] = 0;
   }
+  return kTfLiteOk;
 }

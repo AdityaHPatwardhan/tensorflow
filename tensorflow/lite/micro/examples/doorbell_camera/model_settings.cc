@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/model_settings.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/model_settings.h"
 
 const char* kCategoryLabels[kCategoryCount] = {
     "unused",

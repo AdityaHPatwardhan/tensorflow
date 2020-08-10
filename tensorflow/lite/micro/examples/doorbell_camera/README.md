@@ -30,11 +30,11 @@ this example will only use TFLM reference kernels.
 
 The ARC EM SDP board contains the reach set of extension interfaces. You can
 choose any compatible camera and modify
-[image_provider.cc](/tensorflow/lite/micro/examples/door_bell/image_provider.cc)
+[image_provider.cc](/tensorflow/lite/micro/examples/doorbell_camera/image_provider.cc)
 file accordingly to use input from your specific camera. By default, results of
 running this example are printed to the console. If you would like to instead
 implement some target-specific actions, you need to modify
-[detection_responder.cc](/tensorflow/lite/micro/examples/door_bell/detection_responder.cc)
+[detection_responder.cc](/tensorflow/lite/micro/examples/doorbell_camera/detection_responder.cc)
 accordingly.
 
 The reference implementations of these files are used by default on the EM SDP.
@@ -51,7 +51,7 @@ The example project for ARC EM SDP platform can be generated with the following
 command:
 
 ```
-make -f tensorflow/lite/micro/tools/make/Makefile TARGET=arc_emsdp TAGS=no_arc_mli generate_door_bell_make_project
+make -f tensorflow/lite/micro/tools/make/Makefile TARGET=arc_emsdp TAGS=no_arc_mli generate_doorbell_camera_make_project
 ```
 
 ### Build and Run Example
@@ -71,7 +71,7 @@ get it started.
 2.  Go to the generated example project director
 
     ```
-    cd tensorflow/lite/micro/tools/make/gen/arc_emsdp_arc/prj/door_bell/make
+    cd tensorflow/lite/micro/tools/make/gen/arc_emsdp_arc/prj/doorbell_camera/make
     ```
 
 3.  Build the example using
@@ -134,7 +134,7 @@ Connect the Arducam pins as follows:
 ### Install the Arduino_TensorFlowLite library
 
 Download the current nightly build of the library:
-[door_bell.zip](https://storage.googleapis.com/tensorflow-nightly/github/tensorflow/tensorflow/lite/micro/tools/make/gen/arduino_x86_64/prj/door_bell/tensorflow_lite.zip)
+[doorbell_camera.zip](https://storage.googleapis.com/tensorflow-nightly/github/tensorflow/tensorflow/lite/micro/tools/make/gen/arduino_x86_64/prj/doorbell_camera/tensorflow_lite.zip)
 
 This example application is included as part of the official TensorFlow Lite
 Arduino library. To install it, open the Arduino library manager in
@@ -210,7 +210,7 @@ Once you've saved the file, you are done installing libraries.
 
 Go to `File -> Examples`. You should see an
 example near the bottom of the list named `TensorFlowLite`. Select
-it and click `door_bell` to load the example. Connect your device, then
+it and click `doorbell_camera` to load the example. Connect your device, then
 build and upload the example.
 
 To test the camera, start by pointing the device's camera at something that is
@@ -275,11 +275,11 @@ The sample has been tested on ESP-IDF version 4.0 with the following devices: -
 ESP-EYE is a board which has a built-in camera which can be used to run this
 example , if you want to use other esp boards you will have to connect camera
 externally and write your own
-[image_provider.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/door_bell/esp/image_provider.cc).
+[image_provider.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/doorbell_camera/esp/image_provider.cc).
 and
-[app_camera_esp.c](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/door_bell/esp/app_camera_esp.c).
+[app_camera_esp.c](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/doorbell_camera/esp/app_camera_esp.c).
 You can also write you own
-[detection_responder.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/door_bell/detection_responder.cc).
+[detection_responder.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/doorbell_camera/detection_responder.cc).
 
 ### Install the ESP IDF
 
@@ -298,7 +298,7 @@ The next steps assume that the
 ### Generate the examples
 
 The example project can be generated with the following command:
-`make -f tensorflow/lite/micro/tools/make/Makefile TARGET=esp generate_door_bell_esp_project`
+`make -f tensorflow/lite/micro/tools/make/Makefile TARGET=esp generate_doorbell_camera_esp_project`
 
   - On mac I have seen issues with `make`. Please use `gmake` if you happen to be so.
 
@@ -306,9 +306,9 @@ The example project can be generated with the following command:
 
 Go the the example project directory
 
-`cd tensorflow/lite/micro/tools/make/gen/esp_xtensa-esp32/prj/door_bell/esp-idf`
+`cd tensorflow/lite/micro/tools/make/gen/esp_xtensa-esp32/prj/doorbell_camera/esp-idf`
 
-As the `door_bell` example requires an external component `esp32-camera`
+As the `doorbell_camera` example requires an external component `esp32-camera`
 for functioning hence we will have to manually clone it in `components/`
 directory of the example with following command.
 `git clone https://github.com/espressif/esp32-camera.git components/esp32-camera`
@@ -352,13 +352,13 @@ The following command will download the required dependencies and then compile a
 binary for the SparkFun Edge:
 
 ```
-make -f tensorflow/lite/micro/tools/make/Makefile TARGET=sparkfun_edge door_bell_bin
+make -f tensorflow/lite/micro/tools/make/Makefile TARGET=sparkfun_edge doorbell_camera_bin
 ```
 
 The binary will be created in the following location:
 
 ```
-tensorflow/lite/micro/tools/make/gen/sparkfun_edge_cortex-m4/bin/door_bell.bin
+tensorflow/lite/micro/tools/make/gen/sparkfun_edge_cortex-m4/bin/doorbell_camera.bin
 ```
 
 ### Sign the binary
@@ -380,7 +380,7 @@ Next, run the following command to create a signed binary:
 
 ```
 python3 tensorflow/lite/micro/tools/make/downloads/AmbiqSuite-Rel2.2.0/tools/apollo3_scripts/create_cust_image_blob.py \
---bin tensorflow/lite/micro/tools/make/gen/sparkfun_edge_cortex-m4/bin/door_bell.bin \
+--bin tensorflow/lite/micro/tools/make/gen/sparkfun_edge_cortex-m4/bin/doorbell_camera.bin \
 --load-address 0xC000 \
 --magic-num 0xCB \
 -o main_nonsecure_ota \
@@ -480,7 +480,7 @@ This will take a few minutes, and downloads frameworks the code uses like
 finished, run:
 
 ```
-make -f tensorflow/lite/micro/tools/make/Makefile test_door_bell_test
+make -f tensorflow/lite/micro/tools/make/Makefile test_doorbell_camera_test
 ```
 
 You should see a series of files get compiled, followed by some logging output
@@ -492,7 +492,7 @@ and checks that the network correctly identifies them.
 
 To understand how TensorFlow Lite does this, you can look at the `TestInvoke()`
 function in
-[door_bell_test.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/door_bell/door_bell_test.cc).
+[doorbell_camera_test.cc](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/doorbell_camera/doorbell_camera_test.cc).
 It's a fairly small amount of code, creating an interpreter, getting a handle to
 a model that's been compiled into the program, and then invoking the interpreter
 with the model and sample inputs.

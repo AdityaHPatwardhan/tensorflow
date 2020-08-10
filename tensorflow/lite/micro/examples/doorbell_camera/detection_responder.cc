@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/micro/examples/door_bell/detection_responder.h"
-#include "tensorflow/lite/micro/examples/door_bell/image_provider.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/detection_responder.h"
+#include "tensorflow/lite/micro/examples/doorbell_camera/image_provider.h"
 
 #include "smtp_client.h"
 #include "esp_timer.h"
@@ -44,7 +44,7 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
       camera_fb = (camera_fb_t*)image_provider_get_camera_fb();
       TF_LITE_REPORT_ERROR(error_reporter, "person detected");
       free(jpeg_image);
-      bool ret = frame2jpg(camera_fb, 64,  &jpeg_image, &jpeg_img_size);
+      bool ret = frame2jpg(camera_fb, 80,  &jpeg_image, &jpeg_img_size);
       if (ret != true) {
         TF_LITE_REPORT_ERROR(error_reporter,"jpeg compression failed");
       }

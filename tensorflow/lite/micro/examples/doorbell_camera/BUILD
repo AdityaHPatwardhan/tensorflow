@@ -100,7 +100,7 @@ tflite_micro_cc_test(
 )
 
 cc_binary(
-    name = "door_bell",
+    name = "doorbell_camera",
     srcs = [
         "main.cc",
         "main_functions.cc",
@@ -121,7 +121,7 @@ cc_binary(
 )
 
 sh_test(
-    name = "door_bell_binary_test",
-    srcs = ["door_bell_binary_test.sh"],
-    data = [":door_bell"],
+    name = "doorbell_camera_binary_test",
+    srcs = ["doorbell_camera_binary_test.sh"],
+    data = [":doorbell_camera"],
 )
