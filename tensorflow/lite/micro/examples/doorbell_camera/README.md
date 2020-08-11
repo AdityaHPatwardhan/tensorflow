@@ -57,6 +57,7 @@ As the `doorbell_camera` example requires an external component `esp32-camera`
 for functioning hence we will have to manually clone it in `components/`
 directory of the example with following command.
 `git clone https://github.com/espressif/esp32-camera.git components/esp32-camera`
+
 `git checkout eacd640b8d379883bff1251a1005ebf3cf1ed95c`
 
 Configure camera and email credentials

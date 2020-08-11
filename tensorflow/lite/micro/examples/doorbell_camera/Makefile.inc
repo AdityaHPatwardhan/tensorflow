@@ -1,5 +1,4 @@
 $(eval $(call add_third_party_download,$(PERSON_MODEL_URL),$(PERSON_MODEL_MD5),person_model_grayscale,))
-$(eval $(call add_third_party_download,$(RUY_URL),$(RUY_MD5),ruy,))
 
 doorbell_camera_MODEL_SRCS := \
 tensorflow/lite/micro/examples/doorbell_camera/model_settings.cc \
@@ -51,18 +50,6 @@ $(doorbell_camera_MODEL_HDRS)
 
 #Find any platform - specific rules for this example.
 include $(wildcard tensorflow/lite/micro/examples/doorbell_camera/*/Makefile.inc)
-
-# Tests loading and running a vision model.
-$(eval $(call microlite_test,doorbell_camera_test,\
-$(doorbell_camera_TEST_SRCS),$(doorbell_camera_TEST_HDRS)))
-
-# Tests the image provider module.
-$(eval $(call microlite_test,image_provider_test,\
-$(IMAGE_PROVIDER_TEST_SRCS),$(IMAGE_PROVIDER_TEST_HDRS)))
-
-# Tests the detection responder module.
-$(eval $(call microlite_test,detection_responder_test,\
-$(DETECTION_RESPONDER_TEST_SRCS),$(DETECTION_RESPONDER_TEST_HDRS)))
 
 # Builds a standalone object recognition binary.
 $(eval $(call microlite_test,doorbell_camera,\

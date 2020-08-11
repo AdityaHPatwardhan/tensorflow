@@ -31,21 +31,6 @@ cc_library(
 )
 
 cc_library(
-    name = "simple_images_test_data",
-    srcs = [
-        "no_person_image_data.cc",
-        "person_image_data.cc",
-    ],
-    hdrs = [
-        "no_person_image_data.h",
-        "person_image_data.h",
-    ],
-    deps = [
-        ":model_settings",
-    ],
-)
-
-cc_library(
     name = "image_provider",
     srcs = [
         "image_provider.cc",
@@ -88,17 +73,6 @@ cc_library(
     ],
 )
 
-tflite_micro_cc_test(
-    name = "detection_responder_test",
-    srcs = [
-        "detection_responder_test.cc",
-    ],
-    deps = [
-        ":detection_responder",
-        "//tensorflow/lite/micro/testing:micro_test",
-    ],
-)
-
 cc_binary(
     name = "doorbell_camera",
     srcs = [
@@ -120,8 +94,3 @@ cc_binary(
     ],
 )
 
-sh_test(
-    name = "doorbell_camera_binary_test",
-    srcs = ["doorbell_camera_binary_test.sh"],
-    data = [":doorbell_camera"],
-)
