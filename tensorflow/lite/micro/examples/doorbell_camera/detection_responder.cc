@@ -28,7 +28,7 @@ static int64_t elapsed_time = 0;
 uint8_t *jpeg_image = NULL;
 size_t jpeg_img_size = 0;
 camera_fb_t* camera_fb;
-
+sensor_t * cam_sensor;
 static const char *TAG = "tf_responder";
 
 void RespondToDetection(tflite::ErrorReporter* error_reporter,
@@ -40,14 +40,26 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
 
   if (person_score > 240) {
     if (((esp_timer_get_time() - elapsed_time)/1000) >= HOLD_TIME) {
+      
+      TF_LITE_REPORT_ERROR(error_reporter, "free heap size %d", esp_get_free_heap_size());
 
-      camera_fb = (camera_fb_t*)image_provider_get_camera_fb();
+      cam_sensor = esp_camera_sensor_get();
+      cam_sensor->set_framesize(cam_sensor, FRAMESIZE_CIF);
+
+      camera_fb = esp_camera_fb_get();
+      if (!camera_fb) {
+        ESP_LOGE(TAG, "Camera capture failed");
+      }
+      TF_LITE_REPORT_ERROR(error_reporter, "Time is %d\n", (esp_timer_get_time()/1000));
+      //camera_fb = (camera_fb_t*)image_provider_get_camera_fb();
       TF_LITE_REPORT_ERROR(error_reporter, "person detected");
       free(jpeg_image);
-      bool ret = frame2jpg(camera_fb, 80,  &jpeg_image, &jpeg_img_size);
+      bool ret = frame2jpg(camera_fb, 100,  &jpeg_image, &jpeg_img_size);
       if (ret != true) {
         TF_LITE_REPORT_ERROR(error_reporter,"jpeg compression failed");
       }
+      esp_camera_fb_return(camera_fb);
+      cam_sensor->set_framesize(cam_sensor, FRAMESIZE_96X96);
       esp_err_t esp_ret = smtp_client_send_email(jpeg_image, jpeg_img_size);
       if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send the email, returned %02X", esp_ret);

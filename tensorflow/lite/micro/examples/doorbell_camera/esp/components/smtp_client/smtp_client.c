@@ -521,6 +521,8 @@ exit:
 
     if (client != NULL) {
         mbedtls_ssl_session_reset(&client->ssl);
+        mbedtls_net_free(&client->server_fd);
+        mbedtls_entropy_free(&client->entropy);
     }
 
     putchar('\n'); /* Just a new line */

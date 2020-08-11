@@ -39,6 +39,9 @@ TfLiteStatus InitCamera(tflite::ErrorReporter* error_reporter) {
     return kTfLiteError;
   }
   TF_LITE_REPORT_ERROR(error_reporter, "Camera Initialized\n");
+
+  sensor_t * cam_sensor = esp_camera_sensor_get();
+  cam_sensor->set_framesize(cam_sensor, FRAMESIZE_96X96);
   return kTfLiteOk;
 }
 
@@ -64,7 +67,8 @@ TfLiteStatus PerformCapture(tflite::ErrorReporter* error_reporter,
     return kTfLiteError;
   }
   TF_LITE_REPORT_ERROR(error_reporter, "Image Captured\n");
-  memcpy(image_data, fb->buf, fb->len);
+  TF_LITE_REPORT_ERROR(error_reporter, "Time is %d\n", (esp_timer_get_time()/1000));
+  memcpy(image_data, fb->buf, 9216);
   esp_camera_fb_return(fb);
   /* here the esp camera can give you grayscale image directly */
   return kTfLiteOk;
